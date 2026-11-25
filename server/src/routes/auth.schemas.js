@@ -7,3 +7,6 @@ const newPassword = z
   .max(128, 'Password must be at most 128 characters');
 
 export const signupSchema = z.object({ email, password: newPassword });
+
+// No length rules here, so a policy change never locks out existing accounts.
+export const loginSchema = z.object({ email, password: z.string().min(1).max(128) });

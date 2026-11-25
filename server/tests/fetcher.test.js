@@ -74,10 +74,10 @@ describe('fetcher', () => {
     });
   });
 
-  it('lets the caller veto each request', async () => {
+  it('passes on the error when the caller vetoes a redirect', async () => {
     const beforeRequest = (url) => {
-      if (url.pathname === '/') throw Object.assign(new Error('no'), { code: 'ECONNRESET' });
+      if (url.pathname === '/') throw new RangeError('vetoed');
     };
-    await expect(get('/hop', {}, { beforeRequest })).rejects.toThrow();
+    await expect(get('/hop', {}, { beforeRequest })).rejects.toThrow(RangeError);
   });
 });

@@ -134,16 +134,24 @@ export function createFetcher({
     let url = parseWebUrl(input, { allowedPorts });
     // One deadline covers all redirects and the body.
     const signal = AbortSignal.timeout(timeoutMs);
+    let vetoError;
 
     try {
       for (let redirects = 0; redirects <= maxRedirects; redirects += 1) {
-        if (beforeRequest) await beforeRequest(url);
+        try {
+          await beforeRequest?.(url);
+        } catch (error) {
+          vetoError = error;
+          throw error;
+        }
         const result = await requestOnce(url, signal, limit);
         if (!result.redirectTo) return { ...result, url: url.toString(), redirects };
         url = parseWebUrl(new URL(result.redirectTo, url).toString(), { allowedPorts });
       }
       throw new FetchError('too_many_redirects', 'The website redirects too many times');
     } catch (error) {
+      // The caller's own refusal is passed on unchanged.
+      if (vetoError && error === vetoError) throw error;
       throw toFetchError(signal.aborted ? signal.reason : error);
     }
   }

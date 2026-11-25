@@ -1,9 +1,9 @@
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { createApp } from '../src/app.js';
-import { loadConfig } from '../src/config/env.js';
+import { testConfig } from './helpers/config.js';
 
-const app = createApp(loadConfig({ CORS_ORIGINS: 'http://allowed.test' }));
+const app = createApp(testConfig({ CORS_ORIGINS: 'http://allowed.test' }));
 
 describe('API skeleton', () => {
   it('reports health', async () => {

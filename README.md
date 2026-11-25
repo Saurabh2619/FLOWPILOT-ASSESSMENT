@@ -9,7 +9,7 @@ Website audits, scheduled jobs, AI suggestions and the dashboard are not built y
 ## Requirements
 
 - Node.js 22.13 or newer
-- Docker (for local MongoDB, needed once data features land)
+- Docker (for local MongoDB)
 
 ## Run locally
 

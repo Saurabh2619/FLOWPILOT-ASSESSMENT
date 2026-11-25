@@ -1,0 +1,99 @@
+import { z } from 'zod';
+import { PAID_PLAN_NAMES } from '../config/plans.js';
+import { HttpError } from '../lib/errors.js';
+import { Subscription } from '../models/subscription.model.js';
+import { WebhookEvent } from '../models/webhook-event.model.js';
+import { syncUserPlan } from './plan-sync.service.js';
+
+const DUPLICATE_KEY = 11000;
+
+const eventSchema = z.object({
+  id: z.string().min(1),
+  type: z.enum([
+    'subscription.activated',
+    'subscription.updated',
+    'subscription.cancelled',
+    'payment.failed',
+  ]),
+  providerSubId: z.string().min(1),
+  plan: z.enum(PAID_PLAN_NAMES).optional(),
+  currentPeriodEnd: z.coerce.date().optional(),
+  occurredAt: z.coerce.date(),
+});
+
+async function recordEvent(provider, event) {
+  const key = { provider, eventId: event.id };
+  try {
+    return await WebhookEvent.findOneAndUpdate(
+      key,
+      { $setOnInsert: { type: event.type } },
+      { upsert: true, returnDocument: 'after' },
+    );
+  } catch (error) {
+    // Two deliveries inserted at once; the other one created the record.
+    if (error.code === DUPLICATE_KEY) return WebhookEvent.findOne(key);
+    throw error;
+  }
+}
+
+// Each update is conditional and atomic. Events older than the last applied one are
+// ignored, except cancellation, which is final whenever it arrives.
+async function applyEvent(subscription, event) {
+  const { type, occurredAt, plan, currentPeriodEnd } = event;
+  const byId = { _id: subscription._id };
+
+  if (type === 'subscription.cancelled') {
+    await Subscription.updateOne(byId, { status: 'cancelled', $max: { lastEventAt: occurredAt } });
+    return;
+  }
+
+  const fresh = {
+    ...byId,
+    status: { $ne: 'cancelled' },
+    $or: [{ lastEventAt: null }, { lastEventAt: { $lte: occurredAt } }],
+  };
+
+  if (type === 'payment.failed') {
+    // A failed renewal keeps access while the provider retries. A failed first
+    // payment grants nothing.
+    await Subscription.updateOne(
+      { ...fresh, status: { $in: ['active', 'past_due'] } },
+      { status: 'past_due', lastEventAt: occurredAt },
+    );
+    await Subscription.updateOne(
+      { ...fresh, status: { $in: ['pending', 'failed'] } },
+      { status: 'failed', lastEventAt: occurredAt },
+    );
+    return;
+  }
+
+  await Subscription.updateOne(fresh, {
+    status: 'active',
+    lastEventAt: occurredAt,
+    ...(plan && { plan }),
+    ...(currentPeriodEnd && { currentPeriodEnd }),
+  });
+}
+
+export async function handleWebhook({ rawBody, headers }, billingProvider) {
+  // Authenticity is checked on the raw bytes before anything is trusted.
+  const parsed = eventSchema.safeParse(billingProvider.parseWebhook(rawBody, headers));
+  if (!parsed.success) throw new HttpError(400, 'Unsupported webhook payload');
+  const event = parsed.data;
+  const provider = billingProvider.name;
+
+  const record = await recordEvent(provider, event);
+  if (record.processedAt) return { duplicate: true };
+
+  const subscription = await Subscription.findOne({
+    provider,
+    providerSubId: event.providerSubId,
+  });
+  // Left unprocessed, so the provider's retry can succeed later.
+  if (!subscription) throw new HttpError(409, 'Unknown subscription');
+
+  await applyEvent(subscription, event);
+  await syncUserPlan(subscription.userId, billingProvider);
+  await WebhookEvent.updateOne({ _id: record._id }, { processedAt: new Date() });
+  return { duplicate: false };
+}

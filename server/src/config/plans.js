@@ -1,4 +1,3 @@
-// Audit frequencies, in minutes between runs.
 export const SCHEDULES = {
   '15m': 15,
   hourly: 60,
@@ -27,7 +26,7 @@ export const PLANS = {
   business: {
     name: 'Business',
     priceInr: 1499,
-    maxWebsites: null, // unlimited
+    maxWebsites: null,
     minIntervalMinutes: SCHEDULES['15m'],
     aiSuggestions: true,
     priorityJobs: true,

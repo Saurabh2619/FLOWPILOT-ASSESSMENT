@@ -1,5 +1,3 @@
-// Runs Vitest from the on-disk path casing. On Windows, a lowercase drive letter
-// (for example "d:\") makes Vitest load itself twice and find no tests.
 import { spawnSync } from 'node:child_process';
 import { realpathSync } from 'node:fs';
 import { join } from 'node:path';

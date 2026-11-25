@@ -8,7 +8,6 @@ const newPassword = z
 
 export const signupSchema = z.object({ email, password: newPassword });
 
-// No length rules here, so a policy change never locks out existing accounts.
 export const loginSchema = z.object({ email, password: z.string().min(1).max(128) });
 
 export const forgotPasswordSchema = z.object({ email });

@@ -19,9 +19,12 @@ API, on http://localhost:4000:
 ```bash
 cd server
 npm install
-cp .env.example .env   # then set JWT_ACCESS_SECRET (see the comment in the file)
-npm run dev
+cp .env.example .env
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
+
+Put that value in `.env` as `JWT_ACCESS_SECRET` (at least 32 characters), then run
+`npm run dev`.
 
 Web app, on http://localhost:3000 (in a second terminal):
 

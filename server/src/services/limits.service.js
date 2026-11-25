@@ -30,9 +30,6 @@ export function assertCanActivateWebsite(user) {
   return assertBelowLimit(user, { active: true }, 'active website(s)');
 }
 
-// Brings existing websites within a plan. Nothing is deleted: the oldest active
-// sites stay active, the rest are paused, and faster schedules are slowed down.
-// Running it again has no further effect.
 export async function applyPlanLimits(userId, plan) {
   const { maxWebsites, minIntervalMinutes } = PLANS[plan];
 

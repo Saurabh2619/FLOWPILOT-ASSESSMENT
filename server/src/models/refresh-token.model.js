@@ -4,7 +4,6 @@ const refreshTokenSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     tokenHash: { type: String, required: true, unique: true },
-    // All tokens descended from one login share a family.
     familyId: { type: String, required: true, index: true },
     expiresAt: { type: Date, required: true },
     revokedAt: { type: Date, default: null },
@@ -13,7 +12,6 @@ const refreshTokenSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// MongoDB removes expired tokens on its own.
 refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 export const RefreshToken = mongoose.model('RefreshToken', refreshTokenSchema);

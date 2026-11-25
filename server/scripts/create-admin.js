@@ -1,6 +1,3 @@
-// Creates an admin, or promotes an existing account. Credentials come from the
-// environment so they are never committed:
-//   ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run create-admin
 import { loadConfig } from '../src/config/env.js';
 import { connectDatabase, disconnectDatabase } from '../src/db/connect.js';
 import { ensureAdmin } from '../src/services/admin-seed.service.js';

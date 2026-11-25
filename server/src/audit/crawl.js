@@ -3,7 +3,6 @@ import { parsePage } from './parse-page.js';
 import { createRobots } from './robots.js';
 
 const MAX_INTERNAL_PAGES = 5;
-// Hard cap on internal links requested, whether or not they become pages.
 const MAX_LINK_CHECKS = 10;
 const CRAWL_BUDGET_MS = 90 * 1000;
 
@@ -43,14 +42,12 @@ async function hasSitemap(origin, declared, fetcher, robots) {
       const isXml = /<(urlset|sitemapindex)[\s>]/i.test(response.body);
       if (response.status === 200 && (isXml || url.endsWith('.gz'))) return true;
     } catch {
-      // An unreachable sitemap counts as missing.
+      continue;
     }
   }
   return false;
 }
 
-// Visits the home page and a few internal pages, one at a time. Only a home page
-// failure fails the audit; problems on other pages become findings.
 export async function crawlSite(startUrl, { fetcher, budgetMs = CRAWL_BUDGET_MS }) {
   const deadline = Date.now() + budgetMs;
   const robots = createRobots(fetcher);
@@ -77,7 +74,6 @@ export async function crawlSite(startUrl, { fetcher, budgetMs = CRAWL_BUDGET_MS 
     try {
       const response = await request(link);
       checkedLinks += 1;
-      // 401, 403 and 429 mean access is restricted, not that the link is broken.
       if (response.status >= 400 && ![401, 403, 429].includes(response.status)) {
         brokenLinks.push({ url: link, status: response.status });
       } else if (

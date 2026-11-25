@@ -44,10 +44,6 @@ function toFetchError(error) {
   });
 }
 
-// Outbound HTTP client that is safe to point at user supplied URLs:
-// every hop is validated, DNS answers are checked at connection time (so a name
-// cannot change between check and use), and size, time and redirects are capped.
-// The address and port rules are parameters only so tests can use a local server.
 export function createFetcher({
   isAddressAllowed = isPublicAddress,
   allowedPorts,
@@ -59,7 +55,6 @@ export function createFetcher({
   function safeLookup(hostname, options, callback) {
     resolve(hostname, { ...options, all: true }, (error, addresses) => {
       if (error) return callback(error);
-      // One private address among the answers is enough to refuse the name.
       if (!addresses.length || !addresses.every((entry) => isAddressAllowed(entry.address))) {
         return callback(blocked());
       }
@@ -70,7 +65,6 @@ export function createFetcher({
 
   function requestOnce(url, signal, limit) {
     const host = url.hostname.replace(/^\[|\]$/g, '');
-    // A literal IP address never goes through DNS, so it is checked here.
     if (isIP(host) && !isAddressAllowed(host)) return Promise.reject(blocked());
 
     return new Promise((done, fail) => {
@@ -105,7 +99,6 @@ export function createFetcher({
         let bytes = 0;
         let finished = false;
 
-        // The cap applies after decompression, which also stops compression bombs.
         const finish = (truncated) => {
           if (finished) return;
           finished = true;
@@ -132,7 +125,6 @@ export function createFetcher({
 
   async function safeFetch(input, { beforeRequest, maxBytes: limit = maxBytes } = {}) {
     let url = parseWebUrl(input, { allowedPorts });
-    // One deadline covers all redirects and the body.
     const signal = AbortSignal.timeout(timeoutMs);
     let vetoError;
 
@@ -150,7 +142,6 @@ export function createFetcher({
       }
       throw new FetchError('too_many_redirects', 'The website redirects too many times');
     } catch (error) {
-      // The caller's own refusal is passed on unchanged.
       if (vetoError && error === vetoError) throw error;
       throw toFetchError(signal.aborted ? signal.reason : error);
     }

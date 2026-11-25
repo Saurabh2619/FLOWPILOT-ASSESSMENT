@@ -30,14 +30,11 @@ async function recordEvent(provider, event) {
       { upsert: true, returnDocument: 'after' },
     );
   } catch (error) {
-    // Two deliveries inserted at once; the other one created the record.
     if (error.code === DUPLICATE_KEY) return WebhookEvent.findOne(key);
     throw error;
   }
 }
 
-// Each update is conditional and atomic. Events older than the last applied one are
-// ignored, except cancellation, which is final whenever it arrives.
 async function applyEvent(subscription, event) {
   const { type, occurredAt, plan, currentPeriodEnd } = event;
   const byId = { _id: subscription._id };
@@ -54,8 +51,6 @@ async function applyEvent(subscription, event) {
   };
 
   if (type === 'payment.failed') {
-    // A failed renewal keeps access while the provider retries. A failed first
-    // payment grants nothing.
     await Subscription.updateOne(
       { ...fresh, status: { $in: ['active', 'past_due'] } },
       { status: 'past_due', lastEventAt: occurredAt },
@@ -76,7 +71,6 @@ async function applyEvent(subscription, event) {
 }
 
 export async function handleWebhook({ rawBody, headers }, billingProvider) {
-  // Authenticity is checked on the raw bytes before anything is trusted.
   const parsed = eventSchema.safeParse(billingProvider.parseWebhook(rawBody, headers));
   if (!parsed.success) throw new HttpError(400, 'Unsupported webhook payload');
   const event = parsed.data;
@@ -89,7 +83,6 @@ export async function handleWebhook({ rawBody, headers }, billingProvider) {
     provider,
     providerSubId: event.providerSubId,
   });
-  // Left unprocessed, so the provider's retry can succeed later.
   if (!subscription) throw new HttpError(409, 'Unknown subscription');
 
   await applyEvent(subscription, event);

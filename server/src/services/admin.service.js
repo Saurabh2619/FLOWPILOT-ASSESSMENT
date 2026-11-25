@@ -16,7 +16,6 @@ export async function listUsers({ page, limit }) {
 
 export async function setUserDisabled({ actorId, userId, disabled }) {
   if (!isValidObjectId(userId)) throw new HttpError(404, 'User not found');
-  // Prevents an admin from locking themselves out.
   if (disabled && String(actorId) === userId) {
     throw new HttpError(400, 'You cannot disable your own account');
   }

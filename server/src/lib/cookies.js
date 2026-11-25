@@ -1,7 +1,5 @@
 export const REFRESH_COOKIE = 'fp_refresh';
 
-// Scoped to the auth routes and never readable by page scripts. SameSite=Strict
-// stops other sites from sending it, which covers CSRF on refresh and logout.
 function options(config) {
   return {
     httpOnly: true,

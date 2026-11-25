@@ -28,8 +28,6 @@ export async function getOverview(user) {
   };
 }
 
-// Checkout grants nothing by itself: the plan changes only when a verified webhook
-// confirms payment.
 export async function startCheckout(user, plan, billingProvider) {
   if (user.plan === plan) throw new HttpError(409, 'You are already on this plan');
 
@@ -56,14 +54,12 @@ export async function cancelSubscription(user, billingProvider) {
 
   for (const subscription of current) {
     const { webhook } = await billingProvider.cancelSubscription(subscription);
-    // A real gateway sends this over HTTP later; the mock hands it back.
     if (webhook) await handleWebhook(webhook, billingProvider);
   }
   return getOverview(await User.findById(user._id));
 }
 
 export async function completeMockCheckout(user, { subscriptionId, outcome }, billingProvider) {
-  // Scoped to the signed-in user, so nobody can complete another user's checkout.
   const subscription = await Subscription.findOne({
     userId: user._id,
     provider: billingProvider.name,

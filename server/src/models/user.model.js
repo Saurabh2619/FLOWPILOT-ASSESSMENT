@@ -14,7 +14,6 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// The password hash never leaves the server.
 userSchema.methods.toPublic = function toPublic() {
   return {
     id: this.id,

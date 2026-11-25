@@ -2,9 +2,6 @@ import http from 'node:http';
 import { afterAll, beforeAll } from 'vitest';
 import { createFetcher } from '../../src/lib/net/fetcher.js';
 
-// A throwaway local website. `routes` maps a path to a handler or a response
-// object. The returned fetcher is allowed to reach this server and nothing else
-// private: only the loopback address and its port are opened.
 export function useLocalSite(routes) {
   const site = { routes, hits: [] };
   const server = http.createServer((req, res) => {

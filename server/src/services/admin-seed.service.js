@@ -9,7 +9,6 @@ export async function ensureAdmin(input) {
   }
   const { email, password } = parsed.data;
 
-  // An existing account keeps its password; only the role changes.
   const existing = await User.findOneAndUpdate({ email }, { role: 'admin' });
   if (existing) return { email, created: false };
 

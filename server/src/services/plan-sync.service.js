@@ -7,8 +7,6 @@ const ENTITLED = ['active', 'past_due'];
 const newestEntitled = (userId) =>
   Subscription.findOne({ userId, status: { $in: ENTITLED } }).sort({ createdAt: -1, _id: -1 });
 
-// A newer paid subscription replaces older ones, which are cancelled at the
-// provider first so a failure is retried instead of leaving a double charge.
 async function cancelSuperseded(current, billingProvider) {
   const older = await Subscription.find({
     userId: current.userId,
@@ -22,8 +20,6 @@ async function cancelSuperseded(current, billingProvider) {
   }
 }
 
-// The user's plan is always derived from their subscriptions, never from a single
-// event, so applying this again or out of order gives the same result.
 export async function syncUserPlan(userId, billingProvider) {
   let current = await newestEntitled(userId);
   let plan;
@@ -31,7 +27,6 @@ export async function syncUserPlan(userId, billingProvider) {
     if (current) await cancelSuperseded(current, billingProvider);
     plan = current?.plan ?? 'free';
     await User.updateOne({ _id: userId }, { plan });
-    // Re-read in case another event changed the subscriptions meanwhile.
     current = await newestEntitled(userId);
   } while (plan !== (current?.plan ?? 'free'));
 

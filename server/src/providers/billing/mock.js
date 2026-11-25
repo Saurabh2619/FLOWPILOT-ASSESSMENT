@@ -4,14 +4,6 @@ import { HttpError } from '../../lib/errors.js';
 export const SIGNATURE_HEADER = 'x-mock-signature';
 const PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
 
-// Mock gateway. It signs webhooks the way a real one does, so the verification and
-// processing path is the same.
-//
-// Every billing provider implements:
-//   createSubscription({ plan })     -> { providerSubId, checkoutUrl }
-//   cancelSubscription(subscription) -> { webhook? }
-//   parseWebhook(rawBody, headers)   -> event, or throws if not authentic
-// Only the mock also has simulatePayment(), which stands in for the checkout page.
 export function createMockBillingProvider({ webhookSecret, appUrl }) {
   const sign = (rawBody) => createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
 

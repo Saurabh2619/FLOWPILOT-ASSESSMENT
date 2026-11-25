@@ -73,7 +73,6 @@ function brokenLinkIssue({ brokenLinks, checkedLinks }) {
   return [issue(rule, brokenLinks.length / checkedLinks, affected)];
 }
 
-// Deterministic: the same crawl always gives the same report.
 export function scoreCrawl(crawl) {
   const issues = [
     ...SITE_RULES.filter((rule) => rule.test(crawl)).map((rule) => issue(rule, 1, [crawl.url])),

@@ -4,7 +4,6 @@ const { Mixed, ObjectId } = mongoose.Schema.Types;
 
 const reportSchema = new mongoose.Schema(
   {
-    // One report per run, so a retried run updates it instead of adding another.
     runId: { type: ObjectId, ref: 'Run', required: true, unique: true },
     websiteId: { type: ObjectId, ref: 'Website', required: true, index: true },
     userId: { type: ObjectId, ref: 'User', required: true },
@@ -15,7 +14,6 @@ const reportSchema = new mongoose.Schema(
     pages: { type: [Mixed], default: [] },
     brokenLinks: { type: [Mixed], default: [] },
   },
-  // "issues" is a deliberate field name here, not a Mongoose reserved one.
   { timestamps: true, suppressReservedKeysWarning: true },
 );
 

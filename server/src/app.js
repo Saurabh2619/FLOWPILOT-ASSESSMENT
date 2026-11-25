@@ -13,7 +13,6 @@ import { healthRouter } from './routes/health.routes.js';
 import { createWebhookRouter } from './routes/webhook.routes.js';
 import { createWebsiteRouter } from './routes/website.routes.js';
 
-// Builds the app without listening, so tests can use it directly.
 export function createApp(
   config,
   {
@@ -27,7 +26,6 @@ export function createApp(
   app.set('trust proxy', config.trustProxy);
   app.use(helmet());
   app.use(cors({ origin: config.corsOrigins, credentials: true }));
-  // Mounted before the JSON parser, which would consume the raw body.
   app.use('/api/webhooks', createWebhookRouter({ billingProvider }));
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());

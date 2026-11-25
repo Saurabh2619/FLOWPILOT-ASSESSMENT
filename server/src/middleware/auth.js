@@ -2,7 +2,6 @@ import { HttpError } from '../lib/errors.js';
 import { verifyAccessToken } from '../lib/tokens.js';
 import { User } from '../models/user.model.js';
 
-// The user is loaded on every request, so disabling an account takes effect at once.
 export function requireAuth(config) {
   return async (req, res, next) => {
     const [scheme, token] = (req.get('authorization') ?? '').split(' ');

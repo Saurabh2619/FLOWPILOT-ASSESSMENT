@@ -34,7 +34,6 @@ describe('background worker', () => {
     const added = await request(app).post('/api/websites').set(auth).send({ url: site.origin });
     const { id } = added.body.website;
 
-    // The request only saves the website; nothing is audited inside it.
     expect(await Run.countDocuments()).toBe(0);
 
     const worker = await startWorker({

@@ -25,7 +25,6 @@ export function createWebsiteRouter(config, { fetcher }) {
     res.json({ websites: websites.map((website) => website.toPublic()) });
   });
 
-  // Adding a site makes an outbound request, so it is rate limited.
   router.post(
     '/',
     createRateLimiter(config.websiteRateLimit),

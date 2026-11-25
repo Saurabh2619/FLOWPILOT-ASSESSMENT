@@ -32,7 +32,6 @@ export function createBillingRouter(config, { billingProvider }) {
     res.json(await billingService.cancelSubscription(req.user, billingProvider));
   });
 
-  // Stands in for the gateway's checkout page. Absent with a real provider.
   if (billingProvider.simulatePayment) {
     router.post('/mock/complete', auth, validateBody(mockCompleteSchema), async (req, res) => {
       res.json(await billingService.completeMockCheckout(req.user, req.body, billingProvider));

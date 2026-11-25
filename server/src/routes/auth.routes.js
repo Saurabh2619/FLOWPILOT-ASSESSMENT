@@ -54,7 +54,6 @@ export function createAuthRouter(config, { emailProvider }) {
 
   router.post('/forgot-password', limit(), validateBody(forgotPasswordSchema), async (req, res) => {
     await passwordService.requestPasswordReset(req.body.email, { config, emailProvider });
-    // Same response whether or not the account exists.
     res.status(202).json({ message: 'If that account exists, a reset link has been sent' });
   });
 

@@ -4,13 +4,11 @@ import { User } from '../models/user.model.js';
 
 const DUPLICATE_KEY = 11000;
 
-// Checked when the email is unknown, so both failures take a similar time.
 const dummyHash = hashPassword('unused-password-for-timing');
 
 export async function signup({ email, password }) {
   const passwordHash = await hashPassword(password);
   try {
-    // Role and plan are never taken from the request.
     return await User.create({ email, passwordHash });
   } catch (error) {
     if (error.code === DUPLICATE_KEY) {

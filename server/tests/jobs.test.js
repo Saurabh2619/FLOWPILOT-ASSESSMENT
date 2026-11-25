@@ -156,7 +156,6 @@ describe('executing a run', () => {
   it('replaces the report when a crashed run is repeated', async () => {
     const run = await queuedRun();
     await execute(run, async () => result(50));
-    // The report was written but the worker died before closing the run.
     await Run.updateOne({ _id: run._id }, { status: 'running', lockedUntil: start });
 
     await execute(run, async () => result(90), later(MINUTE));

@@ -5,7 +5,6 @@ import { Website } from '../models/website.model.js';
 
 const DUPLICATE_KEY = 11000;
 const BATCH_SIZE = 200;
-// A dispatched run that has not started after this long is handed out again.
 export const REDISPATCH_AFTER_MS = 10 * 60 * 1000;
 
 async function createRun(website, user) {
@@ -26,13 +25,10 @@ async function createRun(website, user) {
       { upsert: true },
     );
   } catch (error) {
-    // Another scheduler created the same slot at the same moment.
     if (error.code !== DUPLICATE_KEY) throw error;
   }
 }
 
-// Turns due websites into queued runs and moves each to its next time. After a
-// long sleep one catch-up run is made per site, not one for every missed slot.
 export async function createDueRuns(now = new Date()) {
   const due = await Website.find({ active: true, nextRunAt: { $lte: now } })
     .sort({ nextRunAt: 1 })
@@ -44,16 +40,12 @@ export async function createDueRuns(now = new Date()) {
     const user = usersById.get(String(website.userId));
     if (!user || user.disabled) continue;
 
-    // An audit still waiting or running covers this slot.
     const unfinished = await Run.exists({
       websiteId: website._id,
       status: { $in: ['queued', 'running'] },
     });
-    // The run is written before the schedule advances. A crash in between repeats
-    // this step with the same run key, so nothing is lost or duplicated.
     if (!unfinished) await createRun(website, user);
 
-    // The plan's minimum interval applies even if the stored schedule is faster.
     const minutes = Math.max(SCHEDULES[website.schedule], PLANS[user.plan].minIntervalMinutes);
     await Website.updateOne(
       { _id: website._id, nextRunAt: website.nextRunAt },
@@ -62,8 +54,6 @@ export async function createDueRuns(now = new Date()) {
   }
 }
 
-// Hands waiting runs to the queue, including retries that are due and runs whose
-// worker died while holding the lock.
 export async function dispatchRuns(enqueue, now = new Date()) {
   const eligible = {
     $and: [

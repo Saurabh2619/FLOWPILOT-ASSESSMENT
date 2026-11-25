@@ -5,7 +5,6 @@ import { connectDatabase, disconnectDatabase } from '../../src/db/connect.js';
 
 const BASE_URI = process.env.MONGODB_TEST_URI ?? 'mongodb://127.0.0.1:27017';
 
-// Each test file gets its own throwaway database, so files can run in parallel.
 export function useTestDatabase() {
   beforeAll(async () => {
     const name = `flowpilot-test-${randomUUID().slice(0, 8)}`;

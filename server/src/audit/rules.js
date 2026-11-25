@@ -1,6 +1,3 @@
-// Each rule belongs to one category and costs up to `penalty` points of it.
-// Page rules are scaled by the share of crawled pages they affect, so one weak
-// page matters less than a site-wide problem.
 export const CATEGORY_WEIGHTS = {
   seo: 0.3,
   performance: 0.25,

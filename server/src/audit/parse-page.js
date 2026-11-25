@@ -1,6 +1,5 @@
 import * as cheerio from 'cheerio';
 
-// Files that are not worth crawling as pages.
 const ASSET_PATH =
   /\.(?:jpe?g|png|gif|webp|avif|svg|ico|pdf|zip|gz|mp4|mp3|webm|css|js|json|xml|txt|docx?|xlsx?|pptx?|woff2?)$/i;
 
@@ -20,7 +19,7 @@ function structuredDataTypes($) {
     try {
       collect(JSON.parse($(element).text()));
     } catch {
-      // Invalid JSON-LD does not count as structured data.
+      return;
     }
   });
   $('[itemtype*="schema.org"]').each((_, element) => {
@@ -50,16 +49,12 @@ function internalLinks($, pageUrl) {
   return [...links];
 }
 
-// Extracts the facts the checks need. The text kept here comes from the audited
-// site and is untrusted, so every string is length limited.
 export function parsePage(html, pageUrl) {
   const $ = cheerio.load(html);
   const structuredData = structuredDataTypes($);
   const links = internalLinks($, pageUrl);
 
   const images = $('img');
-  // alt="" is a valid way to mark an image as decorative, so only a missing
-  // attribute counts.
   const imagesMissingAlt = images.filter((_, element) => $(element).attr('alt') === undefined);
 
   $('script, style, noscript, template, svg').remove();

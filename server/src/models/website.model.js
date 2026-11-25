@@ -7,7 +7,6 @@ const websiteSchema = new mongoose.Schema(
     url: { type: String, required: true },
     schedule: { type: String, enum: SCHEDULE_NAMES, default: 'daily' },
     active: { type: Boolean, default: true },
-    // Set when a plan change paused the site, so the dashboard can explain why.
     pausedReason: { type: String, enum: ['plan_limit', null], default: null },
     nextRunAt: { type: Date, default: null },
   },

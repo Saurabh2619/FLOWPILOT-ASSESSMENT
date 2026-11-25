@@ -9,7 +9,6 @@ export async function requestPasswordReset(email, { config, emailProvider }) {
   const user = await User.findOne({ email });
   if (!user || user.disabled) return;
 
-  // Only the most recent link works.
   await PasswordReset.updateMany({ userId: user._id, usedAt: null }, { usedAt: new Date() });
 
   const token = createOpaqueToken();
@@ -27,7 +26,6 @@ export async function requestPasswordReset(email, { config, emailProvider }) {
 export async function resetPassword({ token, password }) {
   const passwordHash = await hashPassword(password);
 
-  // Claiming the token in one operation makes it single-use, even under a race.
   const reset = await PasswordReset.findOneAndUpdate(
     { tokenHash: hashToken(token), usedAt: null, expiresAt: { $gt: new Date() } },
     { usedAt: new Date() },

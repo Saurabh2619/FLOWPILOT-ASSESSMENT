@@ -66,7 +66,6 @@ describe('fetcher address checks', () => {
         addresses.map((address) => ({ address, family: address.includes(':') ? 6 : 4 })),
       );
 
-  // Encoded forms of private addresses are normalised by the URL parser.
   it.each([
     'http://127.0.0.1',
     'http://2130706433',

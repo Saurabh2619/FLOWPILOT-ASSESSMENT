@@ -9,10 +9,8 @@ import { getWebsite } from './website.service.js';
 
 export const MAX_ATTEMPTS = 4;
 export const LOCK_MS = 5 * 60 * 1000;
-// Wait before attempts 2, 3 and 4.
 export const BACKOFF_MS = [1, 5, 15].map((minutes) => minutes * 60 * 1000);
 
-// Only one worker can hold a run. An expired lock means its worker is gone.
 function claim(runId, now) {
   return Run.findOneAndUpdate(
     {
@@ -34,7 +32,6 @@ function claim(runId, now) {
   );
 }
 
-// Writes only while this worker still owns the lock.
 function release(run, changes) {
   return Run.updateOne(
     { _id: run._id, lockOwner: run.lockOwner },
@@ -45,7 +42,6 @@ function release(run, changes) {
 const fail = (run, failureReason, now) =>
   release(run, { status: 'failed', failureReason, finishedAt: now });
 
-// A run that crashed its worker on every attempt is closed rather than left stuck.
 function closeExhausted(runId, now) {
   return Run.updateOne(
     { _id: runId, status: 'running', attempts: { $gte: MAX_ATTEMPTS }, lockedUntil: { $lt: now } },
@@ -62,7 +58,6 @@ function closeExhausted(runId, now) {
 async function handleFailure(run, error, now, log) {
   const known = error.name === 'AuditError' || error.name === 'FetchError';
   if (!known) log(error);
-  // Internal error text is not shown to users.
   const reason = known ? error.message : 'Unexpected error during the audit';
   const transient = known ? error.transient : true;
 
@@ -76,8 +71,6 @@ async function handleFailure(run, error, now, log) {
   });
 }
 
-// Safe to call any number of times for the same run. `audit` takes a URL and
-// returns the report.
 export async function executeRun(runId, { audit, now = () => new Date(), log = console.error }) {
   const run = await claim(runId, now());
   if (!run) {
@@ -96,13 +89,11 @@ export async function executeRun(runId, { audit, now = () => new Date(), log = c
 
     const result = await audit(website.url);
 
-    // Upsert by run: repeating a run after a crash replaces its report.
     await Report.updateOne(
       { runId: run._id },
       { ...result, websiteId: run.websiteId, userId: run.userId },
       { upsert: true, runValidators: true },
     );
-    // The website may have been deleted while it was being audited.
     if (!(await Website.exists({ _id: run.websiteId }))) {
       await Report.deleteOne({ runId: run._id });
     }

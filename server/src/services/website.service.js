@@ -13,10 +13,8 @@ import {
 } from './limits.service.js';
 
 const DUPLICATE_KEY = 11000;
-// The site exists but refuses automated visitors; the audit will report that.
 const REACHABLE_ERRORS = new Set([401, 403, 429]);
 
-// Confirms the address is a real, reachable website and returns the stored form.
 async function verifyReachable(input, fetcher) {
   try {
     const url = parseWebUrl(input, { allowedPorts: fetcher.allowedPorts });
@@ -32,14 +30,12 @@ async function verifyReachable(input, fetcher) {
 }
 
 export async function addWebsite(user, { url, schedule }, { fetcher }) {
-  // Cheap plan checks come first, so no request is made for a rejected add.
   assertScheduleAllowed(user.plan, schedule);
   await assertCanAddWebsite(user);
   const verifiedUrl = await verifyReachable(url, fetcher);
 
   let website;
   try {
-    // nextRunAt = now queues the first audit straight away.
     website = await Website.create({
       userId: user._id,
       url: verifiedUrl,
@@ -51,7 +47,6 @@ export async function addWebsite(user, { url, schedule }, { fetcher }) {
     throw error;
   }
 
-  // Counting again after the insert stops parallel requests exceeding the limit.
   const { maxWebsites, name } = PLANS[user.plan];
   if (maxWebsites !== null && (await Website.countDocuments({ userId: user._id })) > maxWebsites) {
     await website.deleteOne();
@@ -64,7 +59,6 @@ export function listWebsites(user) {
   return Website.find({ userId: user._id }).sort({ createdAt: 1, _id: 1 });
 }
 
-// Another user's website looks exactly like a missing one.
 export async function getWebsite(user, id) {
   const website = isValidObjectId(id) && (await Website.findOne({ _id: id, userId: user._id }));
   if (!website) throw new HttpError(404, 'Website not found');
@@ -77,7 +71,6 @@ export async function updateWebsite(user, id, { schedule, active }) {
   if (schedule !== undefined && schedule !== website.schedule) {
     assertScheduleAllowed(user.plan, schedule);
     website.schedule = schedule;
-    // A faster schedule takes effect now rather than after the old interval.
     const soonest = new Date(Date.now() + SCHEDULES[schedule] * 60 * 1000);
     if (website.nextRunAt > soonest) website.nextRunAt = soonest;
   }
@@ -104,7 +97,6 @@ export async function updateWebsite(user, id, { schedule, active }) {
 export async function deleteWebsite(user, id) {
   const website = await getWebsite(user, id);
   await website.deleteOne();
-  // History goes with the website.
   await Promise.all([
     Run.deleteMany({ websiteId: website._id }),
     Report.deleteMany({ websiteId: website._id }),

@@ -34,7 +34,6 @@ export async function rotateSession(token, authConfig) {
 
   const { familyId, userId } = current;
 
-  // A revoked token being presented again means it was copied: end the whole family.
   if (current.revokedAt) {
     await revoke({ familyId });
     throw invalidSession();
@@ -47,8 +46,6 @@ export async function rotateSession(token, authConfig) {
     throw invalidSession();
   }
 
-  // The replacement is written first, so a family revocation that races with this
-  // rotation also covers it. Only one request can then claim the old token.
   const next = await createToken(userId, familyId, authConfig);
   const claimed = await RefreshToken.findOneAndUpdate(
     { _id: current._id, revokedAt: null },

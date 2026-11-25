@@ -6,7 +6,6 @@ import { executeRun, LOCK_MS } from '../services/run.service.js';
 const TICK_JOB = 'scheduler-tick';
 const RUN_JOB = 'audit-run';
 
-// Runs audits in the background. `db` is a connected MongoDB database.
 export async function startWorker({
   db,
   audit,
@@ -45,7 +44,6 @@ export async function startWorker({
   await agenda.every(tickEvery, TICK_JOB);
 
   return {
-    // Lets running audits finish; any cut short are recovered through their lock.
     stop: () => agenda.drain(10000),
   };
 }

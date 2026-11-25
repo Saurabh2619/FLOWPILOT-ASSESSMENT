@@ -4,7 +4,6 @@ import { AuditError } from './errors.js';
 const ROBOTS_AGENT = 'FlowPilotBot';
 const MAX_ROBOTS_BYTES = 500 * 1024;
 
-// Reads robots.txt once per origin and answers whether a URL may be fetched.
 export function createRobots(fetcher) {
   const cache = new Map();
 
@@ -12,7 +11,6 @@ export function createRobots(fetcher) {
     const robotsUrl = `${origin}/robots.txt`;
     const response = await fetcher(robotsUrl, { maxBytes: MAX_ROBOTS_BYTES });
 
-    // RFC 9309: a server error means "do not crawl", a missing file allows all.
     if (response.status >= 500) {
       throw new AuditError(`robots.txt returned status ${response.status}`, { transient: true });
     }
@@ -29,7 +27,6 @@ export function createRobots(fetcher) {
 
   return {
     forOrigin,
-    // Passed to the fetcher, so it also applies to every redirect.
     async assertAllowed(url) {
       const { rules } = await forOrigin(url.origin);
       if (rules.isAllowed(url.toString(), ROBOTS_AGENT) === false) {

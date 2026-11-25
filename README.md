@@ -18,7 +18,7 @@ API, on http://localhost:4000:
 ```bash
 cd server
 npm install
-cp .env.example .env
+cp .env.example .env   # then set JWT_ACCESS_SECRET (see the comment in the file)
 npm run dev
 ```
 
@@ -31,7 +31,10 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Local MongoDB:
+Create an admin account with `ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run create-admin`
+from `server`. Server tests also need MongoDB running.
+
+Local MongoDB (start this first):
 
 ```bash
 docker run -d --name flowpilot-mongo -p 127.0.0.1:27017:27017 -v flowpilot-mongo-data:/data/db mongo:8

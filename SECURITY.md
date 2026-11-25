@@ -27,3 +27,14 @@
 - Gap: while the mock provider is active, any signed-in user can upgrade without
   paying. This is intended for testing only.
 - Gap: a `past_due` subscription keeps access until a cancellation event arrives.
+
+## Server-side request forgery
+
+- Only http and https on ports 80 and 443; no credentials in URLs.
+- Private, loopback, link-local, metadata, carrier NAT and reserved ranges are
+  refused. For IPv6 only global unicast is allowed.
+- DNS answers are checked at connection time, which prevents rebinding, and a name
+  with any private answer is refused.
+- Every redirect is validated again. At most 5 redirects, 10 seconds and 2 MB
+  after decompression.
+- Another user's website returns 404.

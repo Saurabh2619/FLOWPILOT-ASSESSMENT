@@ -3,7 +3,8 @@
 A small subscription SaaS that audits a website on a schedule and suggests what to
 update.
 
-**Status:** in development. Authentication, roles and mock billing work in the API.
+**Status:** in development. Authentication, roles, mock billing and website
+management work in the API.
 Website audits, scheduled jobs, AI suggestions and the dashboard are not built yet.
 
 ## Requirements

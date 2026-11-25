@@ -59,3 +59,13 @@ Limits are enforced on the server. On a downgrade nothing is deleted: the oldest
 active websites stay active up to the new limit, the rest are paused and marked
 `plan_limit`, and faster schedules are slowed to the fastest one allowed. An
 upgrade does not resume paused sites automatically; the owner chooses which.
+
+## Website checks and SSRF protection
+
+- Adding a site validates the URL, resolves the domain and makes a real request.
+  A 401, 403 or 429 counts as existing, so sites that block bots can be added.
+- The outbound client uses Node's `http` and `https` modules instead of axios, to
+  control the DNS lookup used for the actual connection, each redirect and the
+  decompressed size.
+- The website limit is re-counted after inserting. Parallel requests can never
+  exceed it, though in a rare race they may both be refused.

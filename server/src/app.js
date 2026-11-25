@@ -1,3 +1,4 @@
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
@@ -13,6 +14,7 @@ export function createApp(config) {
   app.use(helmet());
   app.use(cors({ origin: config.corsOrigins, credentials: true }));
   app.use(express.json({ limit: '100kb' }));
+  app.use(cookieParser());
 
   app.use('/api/health', healthRouter);
   app.use('/api/auth', createAuthRouter(config));

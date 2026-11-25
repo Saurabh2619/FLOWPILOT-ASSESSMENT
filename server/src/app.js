@@ -2,6 +2,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import { createFetcher } from './lib/net/fetcher.js';
 import { errorHandler, notFound } from './middleware/errors.js';
 import { createAdminRouter } from './routes/admin.routes.js';
 import { createBillingProvider } from './providers/billing/index.js';
@@ -10,6 +11,7 @@ import { createAuthRouter } from './routes/auth.routes.js';
 import { createBillingRouter } from './routes/billing.routes.js';
 import { healthRouter } from './routes/health.routes.js';
 import { createWebhookRouter } from './routes/webhook.routes.js';
+import { createWebsiteRouter } from './routes/website.routes.js';
 
 // Builds the app without listening, so tests can use it directly.
 export function createApp(
@@ -17,6 +19,7 @@ export function createApp(
   {
     emailProvider = createConsoleEmailProvider(),
     billingProvider = createBillingProvider(config),
+    fetcher = createFetcher(),
   } = {},
 ) {
   const app = express();
@@ -33,6 +36,7 @@ export function createApp(
   app.use('/api/auth', createAuthRouter(config, { emailProvider }));
   app.use('/api/admin', createAdminRouter(config));
   app.use('/api/billing', createBillingRouter(config, { billingProvider }));
+  app.use('/api/websites', createWebsiteRouter(config, { fetcher }));
 
   app.use(notFound);
   app.use(errorHandler);

@@ -130,7 +130,7 @@ export function createFetcher({
     });
   }
 
-  return async function safeFetch(input, { beforeRequest, maxBytes: limit = maxBytes } = {}) {
+  async function safeFetch(input, { beforeRequest, maxBytes: limit = maxBytes } = {}) {
     let url = parseWebUrl(input, { allowedPorts });
     // One deadline covers all redirects and the body.
     const signal = AbortSignal.timeout(timeoutMs);
@@ -146,5 +146,8 @@ export function createFetcher({
     } catch (error) {
       throw toFetchError(signal.aborted ? signal.reason : error);
     }
-  };
+  }
+
+  safeFetch.allowedPorts = allowedPorts;
+  return safeFetch;
 }

@@ -14,4 +14,19 @@ const websiteSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+websiteSchema.index({ userId: 1, url: 1 }, { unique: true });
+websiteSchema.index({ active: 1, nextRunAt: 1 });
+
+websiteSchema.methods.toPublic = function toPublic() {
+  return {
+    id: this.id,
+    url: this.url,
+    schedule: this.schedule,
+    active: this.active,
+    pausedReason: this.pausedReason,
+    nextRunAt: this.nextRunAt,
+    createdAt: this.createdAt,
+  };
+};
+
 export const Website = mongoose.model('Website', websiteSchema);

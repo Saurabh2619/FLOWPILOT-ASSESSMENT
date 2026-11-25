@@ -32,6 +32,7 @@ export function loadConfig(source = process.env) {
     appUrl: source.APP_URL ?? 'http://localhost:3000',
     mongoUri: source.MONGODB_URI ?? 'mongodb://127.0.0.1:27017/flowpilot',
     trustProxy: readInteger(source, 'TRUST_PROXY', 0, { min: 0, max: 10 }),
+    websiteRateLimit: readInteger(source, 'WEBSITE_RATE_LIMIT', 30, { min: 1, max: 100000 }),
     billing: {
       // The mock signs and verifies in this process, so a random secret works.
       webhookSecret: source.BILLING_WEBHOOK_SECRET || randomBytes(32).toString('hex'),

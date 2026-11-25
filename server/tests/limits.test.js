@@ -13,11 +13,13 @@ useTestDatabase();
 
 const userOn = (plan) => ({ _id: new mongoose.Types.ObjectId(), plan });
 
+let siteNumber = 0;
+
 async function addSites(userId, count, fields = {}) {
   for (let i = 0; i < count; i += 1) {
     await Website.create({
       userId,
-      url: `https://site-${i}.example.com`,
+      url: `https://site-${(siteNumber += 1)}.example.com`,
       createdAt: new Date(Date.UTC(2026, 0, 1, 0, i)),
       ...fields,
     });

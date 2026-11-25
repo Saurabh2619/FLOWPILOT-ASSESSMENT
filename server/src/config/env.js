@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto';
+
 const DEFAULT_PORT = 4000;
 const MIN_SECRET_LENGTH = 32;
 
@@ -30,6 +32,10 @@ export function loadConfig(source = process.env) {
     appUrl: source.APP_URL ?? 'http://localhost:3000',
     mongoUri: source.MONGODB_URI ?? 'mongodb://127.0.0.1:27017/flowpilot',
     trustProxy: readInteger(source, 'TRUST_PROXY', 0, { min: 0, max: 10 }),
+    billing: {
+      // The mock signs and verifies in this process, so a random secret works.
+      webhookSecret: source.BILLING_WEBHOOK_SECRET || randomBytes(32).toString('hex'),
+    },
     auth: {
       accessSecret: readSecret(source, 'JWT_ACCESS_SECRET'),
       accessTtlSeconds: readInteger(source, 'ACCESS_TOKEN_TTL_SECONDS', 900, { min: 60, max: 3600 }),

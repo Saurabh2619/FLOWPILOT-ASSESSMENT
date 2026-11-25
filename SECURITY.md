@@ -18,3 +18,12 @@
 - Rate limit counters are held in memory, per server instance.
 - No email verification or multi-factor authentication.
 - The mock email provider writes reset links to the server log.
+
+## Billing
+
+- Webhooks are authenticated with a constant-time HMAC comparison on the raw body
+  and the payload is schema-validated.
+- Checkout can only be completed by the account that started it.
+- Gap: while the mock provider is active, any signed-in user can upgrade without
+  paying. This is intended for testing only.
+- Gap: a `past_due` subscription keeps access until a cancellation event arrives.

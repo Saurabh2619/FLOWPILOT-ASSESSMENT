@@ -36,3 +36,26 @@ the client is built.
 - Password reset tokens are hashed, expire after 30 minutes and are claimed
   atomically. A reset ends all refresh sessions.
 - Email is mocked: the reset link is printed to the server log.
+
+## Billing and webhook sync
+
+- Billing sits behind a provider interface. The current provider is a mock that
+  signs webhooks with HMAC-SHA256. Razorpay test mode is planned.
+- Starting checkout grants nothing. Only a verified webhook changes a plan.
+- Signatures are checked on the raw request body, before JSON parsing.
+- Each event ID is stored under a unique index and marked processed only after it
+  is fully applied, so a crash leaves it open for the provider's retry.
+- Events older than the last applied one are ignored. Cancellation is final
+  whatever order it arrives in.
+- The user's plan is derived from their subscriptions rather than from one event,
+  so repeated processing gives the same result.
+- A newly activated subscription cancels older ones.
+- A failed renewal keeps access (`past_due`) until the provider cancels. A failed
+  first payment grants nothing.
+
+## Plan limits and downgrade
+
+Limits are enforced on the server. On a downgrade nothing is deleted: the oldest
+active websites stay active up to the new limit, the rest are paused and marked
+`plan_limit`, and faster schedules are slowed to the fastest one allowed. An
+upgrade does not resume paused sites automatically; the owner chooses which.

@@ -3,6 +3,8 @@ import { PLANS, SCHEDULES } from '../config/plans.js';
 import { HttpError } from '../lib/errors.js';
 import { FetchError } from '../lib/net/errors.js';
 import { parseWebUrl } from '../lib/net/url.js';
+import { Report } from '../models/report.model.js';
+import { Run } from '../models/run.model.js';
 import { Website } from '../models/website.model.js';
 import {
   assertCanActivateWebsite,
@@ -102,4 +104,9 @@ export async function updateWebsite(user, id, { schedule, active }) {
 export async function deleteWebsite(user, id) {
   const website = await getWebsite(user, id);
   await website.deleteOne();
+  // History goes with the website.
+  await Promise.all([
+    Run.deleteMany({ websiteId: website._id }),
+    Report.deleteMany({ websiteId: website._id }),
+  ]);
 }

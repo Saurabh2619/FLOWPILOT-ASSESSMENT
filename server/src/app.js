@@ -3,6 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import { errorHandler, notFound } from './middleware/errors.js';
+import { createAdminRouter } from './routes/admin.routes.js';
 import { createConsoleEmailProvider } from './providers/email/console.js';
 import { createAuthRouter } from './routes/auth.routes.js';
 import { healthRouter } from './routes/health.routes.js';
@@ -19,6 +20,7 @@ export function createApp(config, { emailProvider = createConsoleEmailProvider()
 
   app.use('/api/health', healthRouter);
   app.use('/api/auth', createAuthRouter(config, { emailProvider }));
+  app.use('/api/admin', createAdminRouter(config));
 
   app.use(notFound);
   app.use(errorHandler);

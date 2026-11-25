@@ -87,3 +87,26 @@ upgrade does not resume paused sites automatically; the owner chooses which.
 - Limits: no JavaScript is executed, so client rendered sites can look thin.
   "Performance" is server response time, HTML size and compression only. PageSpeed
   Insights and Core Web Vitals were skipped, as optional.
+
+## Background jobs and idempotency
+
+- The `runs` collection is the source of truth. Agenda only delivers run IDs to a
+  worker, so a lost or duplicated job cannot lose or duplicate results.
+- A scheduler tick (every 30 seconds) turns due websites into runs. The run key is
+  website ID plus scheduled time under a unique index, written before the schedule
+  advances. A crash in between repeats the step with the same key.
+- A worker claims a run atomically and holds a 5 minute lock. Only the lock owner
+  can close the run. An expired lock lets another worker take over; such runs are
+  handed out again within about 10 minutes.
+- Reports are upserted by run ID, so repeating a run replaces its report.
+- Temporary failures (timeouts, connection errors, 429, 5xx) are retried after 1,
+  5 and 15 minutes, 4 attempts in total. Other failures end the run at once with a
+  reason. Retries are driven by the tick, not by the job that failed.
+- Business runs get high job priority. The scheduler applies the plan's minimum
+  interval even if a stored schedule is faster.
+- The first audit is queued as soon as a website is added.
+- The worker runs inside the API process to fit free hosting (`RUN_WORKER`). On a
+  host that sleeps when idle, jobs wait until it wakes; each overdue site then gets
+  one catch-up run rather than one per missed slot.
+- Likely first bottleneck at scale: audits sharing one process and a concurrency of
+  3. Next step would be separate worker instances, which the claim logic supports.

@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment files (only the example is committed)
+.env
+.env.*
+!.env.example
+
+# Build output
+.next/
+out/
+dist/
+build/
+coverage/
+next-env.d.ts
+
+# Logs
+*.log
+logs/
+
+# Local deployment and OS files
+.vercel
+.DS_Store
+Thumbs.db
+
+# Private brief and assessment material
+FLOWPILOT_ASSESSMENT.md
+*.pdf

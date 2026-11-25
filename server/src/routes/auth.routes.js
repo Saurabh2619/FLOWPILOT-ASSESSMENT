@@ -5,10 +5,16 @@ import { requireAuth } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rate-limit.js';
 import { validateBody } from '../middleware/validate.js';
 import * as authService from '../services/auth.service.js';
+import * as passwordService from '../services/password.service.js';
 import * as sessionService from '../services/session.service.js';
-import { loginSchema, signupSchema } from './auth.schemas.js';
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  resetPasswordSchema,
+  signupSchema,
+} from './auth.schemas.js';
 
-export function createAuthRouter(config) {
+export function createAuthRouter(config, { emailProvider }) {
   const router = Router();
   const limit = () => createRateLimiter(config.auth.rateLimitMax);
 
@@ -43,6 +49,17 @@ export function createAuthRouter(config) {
   router.post('/logout', async (req, res) => {
     await sessionService.endSession(req.cookies[REFRESH_COOKIE]);
     clearRefreshCookie(res, config);
+    res.status(204).end();
+  });
+
+  router.post('/forgot-password', limit(), validateBody(forgotPasswordSchema), async (req, res) => {
+    await passwordService.requestPasswordReset(req.body.email, { config, emailProvider });
+    // Same response whether or not the account exists.
+    res.status(202).json({ message: 'If that account exists, a reset link has been sent' });
+  });
+
+  router.post('/reset-password', limit(), validateBody(resetPasswordSchema), async (req, res) => {
+    await passwordService.resetPassword(req.body);
     res.status(204).end();
   });
 

@@ -38,3 +38,4 @@
 - Every redirect is validated again. At most 5 redirects, 10 seconds and 2 MB
   after decompression.
 - Another user's website returns 404.
+- Text taken from audited sites is untrusted and length limited before storage.

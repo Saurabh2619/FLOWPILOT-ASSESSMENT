@@ -69,3 +69,21 @@ upgrade does not resume paused sites automatically; the owner chooses which.
   decompressed size.
 - The website limit is re-counted after inserting. Parallel requests can never
   exceed it, though in a rare race they may both be refused.
+
+## Audit scope and scoring
+
+- The home page and up to 5 internal pages are fetched one at a time, with at most
+  10 internal links requested in total and a 90 second budget. Only a home page
+  failure fails the run.
+- robots.txt is applied to every request, including redirects. A 5xx robots.txt
+  response blocks the audit, as RFC 9309 describes.
+- Each category starts at 100 and loses the penalty of every issue found in it,
+  with a floor of 0. Page issues are scaled by the share of pages affected, image
+  alt text by the share of images, and broken links by the share of links checked.
+- Overall score = SEO 30%, performance 25%, accessibility 20%, content 15%,
+  technical 10%. Rules and penalties are in `server/src/audit/rules.js`.
+- Scoring is deterministic, so a changed score means the site or its response
+  changed.
+- Limits: no JavaScript is executed, so client rendered sites can look thin.
+  "Performance" is server response time, HTML size and compression only. PageSpeed
+  Insights and Core Web Vitals were skipped, as optional.

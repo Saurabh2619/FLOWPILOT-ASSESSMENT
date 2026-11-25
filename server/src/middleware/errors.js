@@ -9,6 +9,9 @@ export function errorHandler(err, req, res, next) {
   if (status >= 500) console.error(err);
   // Internal error details are never sent to the client.
   res.status(status).json({
-    error: { message: status >= 500 ? 'Internal server error' : err.message },
+    error: {
+      message: status >= 500 ? 'Internal server error' : err.message,
+      ...(status < 500 && err.details ? { details: err.details } : {}),
+    },
   });
 }

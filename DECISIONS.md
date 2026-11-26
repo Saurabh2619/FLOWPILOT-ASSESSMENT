@@ -29,8 +29,9 @@ the client is built.
   share a family. Presenting a revoked token revokes the whole family.
 - The replacement token is written before the old one is claimed atomically, so a
   revocation that races with a rotation also covers the replacement.
-- Trade-off: two browser tabs refreshing at the same moment look like reuse and log
-  the user out. The web app must send one refresh request at a time.
+- Two refreshes at the same moment would look like reuse and log the user out. The
+  web app shares one refresh request per tab and uses the Web Locks API so tabs take
+  turns. Browsers without Web Locks keep that risk across tabs.
 - The user is loaded on each authenticated request, so disabling an account is
   immediate. The cost is one database read per request.
 - Password reset tokens are hashed, expire after 30 minutes and are claimed
@@ -127,3 +128,17 @@ upgrade does not resume paused sites automatically; the owner chooses which.
   failed one. A finished suggestion is not regenerated.
 - One suggestion job runs at a time to stay within free rate limits. This is the
   first part that would slow down with many users.
+
+## Dashboard
+
+- Pages are client components that call the API. The access token is kept in memory
+  only, and a reload restores the session from the refresh cookie.
+- Pending audits and suggestions are polled every 5 seconds. Polling stops when
+  nothing is pending. Push updates were not worth the extra moving parts here.
+- Adding, pausing, rescheduling, deleting and disabling update the screen at once
+  and roll back if the server refuses. A new website shows as pending until the
+  reachability check finishes.
+- Sign-in forms appear only after the app has loaded, so credentials can never be
+  submitted as a plain page request.
+- Checked in headless Chrome at 1280 px and 360 px. There are no automated browser
+  tests in the repository.

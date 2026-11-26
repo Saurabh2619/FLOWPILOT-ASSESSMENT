@@ -3,10 +3,9 @@
 A small subscription SaaS that audits a website on a schedule and suggests what to
 update.
 
-**Status:** in development. Authentication, roles, mock billing, website
-management, audits and scheduled background runs work in the API.
-AI suggestions work in the API when `AI_API_KEY` (a free Gemini key) is set.
-The dashboard is not built yet.
+**Status:** in development. Accounts, roles, mock billing, website management,
+audits, scheduled background runs, AI suggestions and the dashboard work locally.
+Billing is a mock (Razorpay is not connected yet) and the app is not deployed.
 
 ## Requirements
 

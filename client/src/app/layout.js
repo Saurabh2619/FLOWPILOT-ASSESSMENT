@@ -1,3 +1,4 @@
+import { AuthProvider } from "@/lib/auth";
 import "./globals.css";
 
 export const metadata = {
@@ -8,7 +9,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col" suppressHydrationWarning>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

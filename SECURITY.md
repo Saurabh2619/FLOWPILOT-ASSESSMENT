@@ -67,3 +67,6 @@
   has no fixed outgoing address. Access still needs the database password.
 - Gap: the database user has administrator rights on the cluster rather than access
   to the application database only.
+- Gap: the demo account's password is published for reviewers, so anyone can change
+  its data. It has no administrator rights. The administrator password is not in the
+  repository.

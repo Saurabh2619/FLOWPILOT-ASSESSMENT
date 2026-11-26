@@ -56,8 +56,27 @@ export async function addWebsite(user, { url, schedule }, { fetcher }) {
   return website;
 }
 
-export function listWebsites(user) {
-  return Website.find({ userId: user._id }).sort({ createdAt: 1, _id: 1 });
+async function newestPerWebsite(Model, ids, sort, field) {
+  const rows = await Model.aggregate([
+    { $match: { websiteId: { $in: ids } } },
+    { $sort: sort },
+    { $group: { _id: '$websiteId', value: { $first: field } } },
+  ]);
+  return new Map(rows.map((row) => [String(row._id), row.value]));
+}
+
+export async function listWebsites(user) {
+  const websites = await Website.find({ userId: user._id }).sort({ createdAt: 1, _id: 1 });
+  const ids = websites.map((website) => website._id);
+  const [statuses, scores] = await Promise.all([
+    newestPerWebsite(Run, ids, { scheduledFor: -1, _id: -1 }, '$status'),
+    newestPerWebsite(Report, ids, { createdAt: -1, _id: -1 }, '$overallScore'),
+  ]);
+  return websites.map((website) => ({
+    ...website.toPublic(),
+    latestStatus: statuses.get(website.id) ?? null,
+    latestScore: scores.get(website.id) ?? null,
+  }));
 }
 
 export async function getWebsite(user, id) {

@@ -54,6 +54,12 @@ describe('background worker', () => {
     expect(run).toMatchObject({ status: 'success', attempts: 1 });
     expect(run.overallScore).toBeGreaterThan(0);
 
+    const list = await request(app).get('/api/websites').set(auth);
+    expect(list.body.websites[0]).toMatchObject({
+      latestStatus: 'success',
+      latestScore: run.overallScore,
+    });
+
     const detail = await request(app).get(`/api/websites/${id}/runs/${run.id}`).set(auth);
     expect(detail.body.report.issues.length).toBeGreaterThan(0);
     expect(detail.body.report.pages[0].title).toBe('Local test site');

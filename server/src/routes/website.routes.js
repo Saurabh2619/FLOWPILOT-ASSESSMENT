@@ -22,8 +22,7 @@ export function createWebsiteRouter(config, { fetcher }) {
   router.use(requireAuth(config));
 
   router.get('/', async (req, res) => {
-    const websites = await websiteService.listWebsites(req.user);
-    res.json({ websites: websites.map((website) => website.toPublic()) });
+    res.json({ websites: await websiteService.listWebsites(req.user) });
   });
 
   router.post(

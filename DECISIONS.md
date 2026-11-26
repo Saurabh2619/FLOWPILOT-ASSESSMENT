@@ -1,6 +1,67 @@
 # Decisions
 
-Working notes, expanded as the project is built.
+## Built and skipped
+
+| Area | Built | Skipped or simplified, and why |
+| --- | --- | --- |
+| Accounts | Sign up, login, rotation, logout, reset, roles, admin disable | Email verification and MFA: outside the brief |
+| Billing | Provider interface, mock checkout, signed webhooks, limits, downgrade | Real gateway: see "Mocked and changed" |
+| Audit | Home page and up to 5 pages, all listed checks, scoring | PageSpeed and Core Web Vitals: optional. No JavaScript rendering: too heavy for a free host |
+| Jobs | Schedules, run keys, locks, backoff, history, priority | Separate worker service: free hosting |
+| AI | Gemini with model fallback, schema check, separate retries | Regenerating a finished suggestion |
+| Web app | All listed screens, mobile layout, optimistic updates | Automated browser tests: time |
+| Delivery | Vercel, Render, Atlas, CI for lint and tests | Automatic API deploys and uptime pings |
+
+## Mocked and changed
+
+| Item | What | Why | Trade-off |
+| --- | --- | --- | --- |
+| Billing | Mock gateway instead of Razorpay test mode | Opening the merchant account required a PAN | Scores below a real gateway; checkout is simulated |
+| Email | Reset links written to the server log | No free sender set up | Reviewers cannot receive a reset link |
+| HTTP client | Node `http`/`https` instead of axios | Control of DNS, redirects and size for SSRF safety | More code to maintain |
+
+## Three hardest trade-offs
+
+### 1. Own run records instead of trusting the job library
+
+Agenda can lock jobs, but a job can still be delivered twice or lost between steps.
+The `runs` collection holds the state, the unique run key and the lock, and Agenda
+only delivers IDs. This makes duplicates and crash recovery testable without the
+queue. The cost is extra code, a delay of up to 30 seconds before a due run starts,
+and about 10 minutes before a run from a dead worker is handed out again.
+
+### 2. Strict refresh token reuse detection
+
+Revoking the whole token family on reuse limits the damage from a stolen cookie.
+It also punishes an honest client that refreshes twice at once, for example from two
+tabs. The server stays strict, and the web app serialises refreshes with a shared
+promise and the Web Locks API. Browsers without Web Locks can still be logged out.
+
+### 3. Background jobs inside the API process
+
+One process fits the free plan and is simple to deploy. The cost is that audits
+compete with API requests, and nothing runs while the host sleeps. A catch-up run on
+wake keeps history honest without creating a flood of missed runs. The claim logic
+already allows several workers, so splitting them out needs no data change.
+
+## Scaling to 10,000 users
+
+These are estimates, not load tests. Assume 80% Free with one daily site, 15% Pro
+with three hourly sites and 5% Business with ten sites every 15 minutes. That is
+about 600,000 audits a day, or 7 a second.
+
+1. **First bottleneck: audit workers.** One process runs 3 audits at a time. At
+   about 15 to 40 seconds each, that is under 20,000 a day. Meeting the load needs
+   100 to 300 audits in flight: separate worker services, higher concurrency, and
+   limits per target host.
+2. **Scheduler.** It takes at most 200 due websites every 30 seconds, under 580,000
+   a day. It needs batching until nothing is due, or partitioning by website ID.
+3. **AI.** One suggestion job at a time on a free tier cannot keep up. It needs a
+   paid quota, and a new suggestion only when the report has changed.
+4. **Storage.** Reports would pass the 512 MB free database within hours. It needs a
+   paid cluster, retention rules and summaries for old history.
+5. **API.** Rate limit counters need a shared store, and website list queries need
+   the latest score stored on the website.
 
 ## Stack
 
@@ -111,8 +172,7 @@ upgrade does not resume paused sites automatically; the owner chooses which.
 - The worker runs inside the API process to fit free hosting (`RUN_WORKER`). On a
   host that sleeps when idle, jobs wait until it wakes; each overdue site then gets
   one catch-up run rather than one per missed slot.
-- Likely first bottleneck at scale: audits sharing one process and a concurrency of
-  3. Next step would be separate worker instances, which the claim logic supports.
+- Scaling limits are described under "Scaling to 10,000 users".
 
 ## AI suggestions
 

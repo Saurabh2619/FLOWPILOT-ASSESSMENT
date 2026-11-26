@@ -50,3 +50,10 @@
 - Gap: prompt injection can still skew the wording of advice for that site.
 - Gap: on the free tier Google may use submitted data to improve its products.
   Only reports about public pages are sent, with no account details.
+
+## Web app
+
+- The access token is held in memory, not in browser storage. The refresh token is
+  not readable by scripts.
+- Text from audited sites and from the AI is rendered as text, never as HTML.
+- Gap: the web app sets no Content Security Policy of its own.

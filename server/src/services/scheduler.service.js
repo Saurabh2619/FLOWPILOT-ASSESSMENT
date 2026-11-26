@@ -1,11 +1,14 @@
 import { PLANS, SCHEDULES } from '../config/plans.js';
 import { Run } from '../models/run.model.js';
+import { Suggestion } from '../models/suggestion.model.js';
 import { User } from '../models/user.model.js';
 import { Website } from '../models/website.model.js';
+import { dispatch } from './leases.js';
 
 const DUPLICATE_KEY = 11000;
 const BATCH_SIZE = 200;
-export const REDISPATCH_AFTER_MS = 10 * 60 * 1000;
+
+export { REDISPATCH_AFTER_MS } from './leases.js';
 
 async function createRun(website, user) {
   const scheduledFor = website.nextRunAt;
@@ -54,30 +57,7 @@ export async function createDueRuns(now = new Date()) {
   }
 }
 
-export async function dispatchRuns(enqueue, now = new Date()) {
-  const eligible = {
-    $and: [
-      {
-        $or: [
-          { status: 'queued', nextAttemptAt: { $lte: now } },
-          { status: 'running', lockedUntil: { $lt: now } },
-        ],
-      },
-      {
-        $or: [
-          { dispatchedAt: null },
-          { dispatchedAt: { $lt: new Date(now.getTime() - REDISPATCH_AFTER_MS) } },
-        ],
-      },
-    ],
-  };
+export const dispatchRuns = (enqueue, now = new Date()) => dispatch(Run, enqueue, now);
 
-  const runs = await Run.find(eligible).sort({ priority: 1, nextAttemptAt: 1 }).limit(BATCH_SIZE);
-  for (const run of runs) {
-    const claimed = await Run.findOneAndUpdate(
-      { _id: run._id, ...eligible },
-      { dispatchedAt: now },
-    );
-    if (claimed) await enqueue(run);
-  }
-}
+export const dispatchSuggestions = (enqueue, now = new Date()) =>
+  dispatch(Suggestion, enqueue, now);

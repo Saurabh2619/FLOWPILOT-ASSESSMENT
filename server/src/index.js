@@ -5,6 +5,7 @@ import { loadConfig } from './config/env.js';
 import { connectDatabase, disconnectDatabase } from './db/connect.js';
 import { startWorker } from './jobs/worker.js';
 import { createFetcher } from './lib/net/fetcher.js';
+import { createAiProvider } from './providers/ai/index.js';
 
 const config = loadConfig();
 const fetcher = createFetcher();
@@ -16,6 +17,7 @@ const worker = config.runWorker
   ? await startWorker({
       db: mongoose.connection.db,
       audit: (url) => runAudit(url, { fetcher }),
+      ai: createAiProvider(config),
     })
   : null;
 

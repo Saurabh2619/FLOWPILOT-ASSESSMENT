@@ -1,80 +1,34 @@
-import { randomUUID } from 'node:crypto';
 import { isValidObjectId } from 'mongoose';
+import { PLANS } from '../config/plans.js';
 import { HttpError } from '../lib/errors.js';
 import { Report } from '../models/report.model.js';
 import { Run } from '../models/run.model.js';
+import { Suggestion } from '../models/suggestion.model.js';
 import { User } from '../models/user.model.js';
 import { Website } from '../models/website.model.js';
+import { claim, closeExhausted, fail, release, retryOrFail } from './leases.js';
+import { queueSuggestion } from './suggestion.service.js';
 import { getWebsite } from './website.service.js';
 
-export const MAX_ATTEMPTS = 4;
-export const LOCK_MS = 5 * 60 * 1000;
-export const BACKOFF_MS = [1, 5, 15].map((minutes) => minutes * 60 * 1000);
+export { BACKOFF_MS, LOCK_MS, MAX_ATTEMPTS } from './leases.js';
 
-function claim(runId, now) {
-  return Run.findOneAndUpdate(
-    {
-      _id: runId,
-      attempts: { $lt: MAX_ATTEMPTS },
-      $or: [
-        { status: 'queued', nextAttemptAt: { $lte: now } },
-        { status: 'running', lockedUntil: { $lt: now } },
-      ],
-    },
-    {
-      status: 'running',
-      lockOwner: randomUUID(),
-      lockedUntil: new Date(now.getTime() + LOCK_MS),
-      startedAt: now,
-      $inc: { attempts: 1 },
-    },
-    { returnDocument: 'after' },
-  );
-}
-
-function release(run, changes) {
-  return Run.updateOne(
-    { _id: run._id, lockOwner: run.lockOwner },
-    { lockOwner: null, lockedUntil: null, ...changes },
-  );
-}
-
-const fail = (run, failureReason, now) =>
-  release(run, { status: 'failed', failureReason, finishedAt: now });
-
-function closeExhausted(runId, now) {
-  return Run.updateOne(
-    { _id: runId, status: 'running', attempts: { $gte: MAX_ATTEMPTS }, lockedUntil: { $lt: now } },
-    {
-      status: 'failed',
-      failureReason: 'The audit stopped unexpectedly on every attempt',
-      finishedAt: now,
-      lockOwner: null,
-      lockedUntil: null,
-    },
-  );
-}
-
-async function handleFailure(run, error, now, log) {
+function handleFailure(run, error, now, log) {
   const known = error.name === 'AuditError' || error.name === 'FetchError';
   if (!known) log(error);
-  const reason = known ? error.message : 'Unexpected error during the audit';
-  const transient = known ? error.transient : true;
-
-  if (!transient || run.attempts >= MAX_ATTEMPTS) return fail(run, reason, now);
-
-  return release(run, {
-    status: 'queued',
-    failureReason: reason,
-    nextAttemptAt: new Date(now.getTime() + BACKOFF_MS[run.attempts - 1]),
-    dispatchedAt: null,
-  });
+  return retryOrFail(
+    run,
+    {
+      reason: known ? error.message : 'Unexpected error during the audit',
+      transient: known ? error.transient : true,
+    },
+    now,
+  );
 }
 
 export async function executeRun(runId, { audit, now = () => new Date(), log = console.error }) {
-  const run = await claim(runId, now());
+  const run = await claim(Run, runId, now());
   if (!run) {
-    await closeExhausted(runId, now());
+    await closeExhausted(Run, runId, 'The audit stopped unexpectedly on every attempt', now());
     return;
   }
 
@@ -89,13 +43,19 @@ export async function executeRun(runId, { audit, now = () => new Date(), log = c
 
     const result = await audit(website.url);
 
-    await Report.updateOne(
+    const report = await Report.findOneAndUpdate(
       { runId: run._id },
       { ...result, websiteId: run.websiteId, userId: run.userId },
-      { upsert: true, runValidators: true },
+      { upsert: true, runValidators: true, returnDocument: 'after' },
     );
+    if (PLANS[user.plan].aiSuggestions) {
+      await queueSuggestion(report, { priority: run.priority, now: now() });
+    }
     if (!(await Website.exists({ _id: run.websiteId }))) {
-      await Report.deleteOne({ runId: run._id });
+      await Promise.all([
+        Report.deleteOne({ runId: run._id }),
+        Suggestion.deleteOne({ runId: run._id }),
+      ]);
     }
     await release(run, { status: 'success', failureReason: null, finishedAt: now() });
   } catch (error) {
@@ -121,6 +81,13 @@ export async function getRun(user, websiteId, runId) {
   const run =
     isValidObjectId(runId) && (await Run.findOne({ _id: runId, websiteId: website._id }));
   if (!run) throw new HttpError(404, 'Run not found');
-  const report = await Report.findOne({ runId: run._id });
-  return { run: run.toPublic(), report: report?.toPublic() ?? null };
+  const [report, suggestion] = await Promise.all([
+    Report.findOne({ runId: run._id }),
+    Suggestion.findOne({ runId: run._id }),
+  ]);
+  return {
+    run: run.toPublic(),
+    report: report?.toPublic() ?? null,
+    suggestion: suggestion?.toPublic() ?? null,
+  };
 }

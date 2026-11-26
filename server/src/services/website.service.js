@@ -5,6 +5,7 @@ import { FetchError } from '../lib/net/errors.js';
 import { parseWebUrl } from '../lib/net/url.js';
 import { Report } from '../models/report.model.js';
 import { Run } from '../models/run.model.js';
+import { Suggestion } from '../models/suggestion.model.js';
 import { Website } from '../models/website.model.js';
 import {
   assertCanActivateWebsite,
@@ -100,5 +101,6 @@ export async function deleteWebsite(user, id) {
   await Promise.all([
     Run.deleteMany({ websiteId: website._id }),
     Report.deleteMany({ websiteId: website._id }),
+    Suggestion.deleteMany({ websiteId: website._id }),
   ]);
 }

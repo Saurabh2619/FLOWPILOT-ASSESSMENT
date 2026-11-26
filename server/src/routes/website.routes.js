@@ -5,6 +5,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rate-limit.js';
 import { validateBody } from '../middleware/validate.js';
 import * as runService from '../services/run.service.js';
+import * as suggestionService from '../services/suggestion.service.js';
 import * as websiteService from '../services/website.service.js';
 
 const createSchema = z.object({
@@ -48,6 +49,16 @@ export function createWebsiteRouter(config, { fetcher }) {
   router.get('/:id/runs/:runId', async (req, res) => {
     res.json(await runService.getRun(req.user, req.params.id, req.params.runId));
   });
+
+  router.post(
+    '/:id/runs/:runId/suggestion',
+    createRateLimiter(config.websiteRateLimit),
+    async (req, res) => {
+      const { id, runId } = req.params;
+      const suggestion = await suggestionService.requestSuggestion(req.user, id, runId);
+      res.status(202).json({ suggestion });
+    },
+  );
 
   router.patch('/:id', validateBody(updateSchema), async (req, res) => {
     const website = await websiteService.updateWebsite(req.user, req.params.id, req.body);

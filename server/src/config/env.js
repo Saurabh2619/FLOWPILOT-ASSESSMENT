@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 
 const DEFAULT_PORT = 4000;
 const MIN_SECRET_LENGTH = 32;
+const DEFAULT_AI_MODELS = 'gemini-3.5-flash,gemini-flash-lite-latest,gemini-3.1-flash-lite';
 
 function readInteger(source, name, fallback, { min, max }) {
   const value = Number(source[name] ?? fallback);
@@ -34,6 +35,13 @@ export function loadConfig(source = process.env) {
     trustProxy: readInteger(source, 'TRUST_PROXY', 0, { min: 0, max: 10 }),
     websiteRateLimit: readInteger(source, 'WEBSITE_RATE_LIMIT', 30, { min: 1, max: 100000 }),
     runWorker: source.RUN_WORKER !== 'false',
+    ai: {
+      apiKey: source.AI_API_KEY?.trim() || null,
+      models: (source.AI_MODELS || DEFAULT_AI_MODELS)
+        .split(',')
+        .map((model) => model.trim())
+        .filter(Boolean),
+    },
     billing: {
       webhookSecret: source.BILLING_WEBHOOK_SECRET || randomBytes(32).toString('hex'),
     },

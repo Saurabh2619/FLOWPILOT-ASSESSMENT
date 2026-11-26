@@ -41,7 +41,9 @@ the client is built.
 ## Billing and webhook sync
 
 - Billing sits behind a provider interface. The current provider is a mock that
-  signs webhooks with HMAC-SHA256. Razorpay test mode is planned.
+  signs webhooks with HMAC-SHA256. Razorpay test mode was not connected, because
+  opening the merchant account required a PAN. A Razorpay provider can implement the
+  same interface.
 - Starting checkout grants nothing. Only a verified webhook changes a plan.
 - Signatures are checked on the raw request body, before JSON parsing.
 - Each event ID is stored under a unique index and marked processed only after it
@@ -142,3 +144,14 @@ upgrade does not resume paused sites automatically; the owner chooses which.
   submitted as a plain page request.
 - Checked in headless Chrome at 1280 px and 360 px. There are no automated browser
   tests in the repository.
+
+## Deployment
+
+- Web app on Vercel (`client`, `API_URL` set to the API), API on Render's free plan
+  in Singapore (`server`), database on MongoDB Atlas M0 in Mumbai.
+- The browser only talks to the Vercel origin, which forwards `/api` to Render.
+- `TRUST_PROXY` is 3 on Render. With 1, rate limits were keyed on Render's internal
+  proxy addresses. With 3, a direct request is keyed on the caller's address and a
+  forged `X-Forwarded-For` header is ignored. This was checked on the live API.
+- The free API instance sleeps when idle. Scheduled audits wait until it wakes.
+- The API service was connected by public repository URL, so it is deployed by hand.

@@ -3,9 +3,12 @@
 A small subscription SaaS that audits a website on a schedule and suggests what to
 update.
 
-**Status:** in development. Accounts, roles, mock billing, website management,
-audits, scheduled background runs, AI suggestions and the dashboard work locally.
-Billing is a mock (Razorpay is not connected yet) and the app is not deployed.
+**Live app:** https://flowpilot-assessment.vercel.app  
+**API health:** https://flowpilot-api-wx5l.onrender.com/api/health
+
+The API runs on a free host that sleeps when idle, so the first request can take
+about a minute. Billing is a mock gateway: choose a plan and press "Pay
+successfully". No card is needed.
 
 ## Requirements
 

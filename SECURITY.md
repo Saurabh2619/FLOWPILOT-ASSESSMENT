@@ -57,3 +57,13 @@
   not readable by scripts.
 - Text from audited sites and from the AI is rendered as text, never as HTML.
 - Gap: the web app sets no Content Security Policy of its own.
+
+## Deployment
+
+- Secrets are set in the host's environment settings and are not in the repository.
+- Gap: requests that arrive through Vercel are rate limited by Vercel's outgoing
+  address, so different users can share one limit.
+- Gap: the database accepts connections from any address, because the free API host
+  has no fixed outgoing address. Access still needs the database password.
+- Gap: the database user has administrator rights on the cluster rather than access
+  to the application database only.

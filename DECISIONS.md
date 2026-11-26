@@ -110,3 +110,20 @@ upgrade does not resume paused sites automatically; the owner chooses which.
   one catch-up run rather than one per missed slot.
 - Likely first bottleneck at scale: audits sharing one process and a concurrency of
   3. Next step would be separate worker instances, which the claim logic supports.
+
+## AI suggestions
+
+- Google Gemini (free tier) behind a provider interface. The model list is set by
+  `AI_MODELS`; a busy, rate limited or missing model, a timeout or an unusable
+  answer moves on to the next one.
+- The model receives a trimmed copy of the saved report, never raw HTML.
+- The answer is requested as JSON and validated against a schema before storage.
+- A suggestion is its own job, one per report under a unique index, with the same
+  lock, retry and backoff rules as audits. An audit stays successful when the AI
+  fails.
+- Only Pro and Business reports are sent. The plan is checked again when the job
+  runs.
+- An owner can request suggestions for an existing report, which also restarts a
+  failed one. A finished suggestion is not regenerated.
+- One suggestion job runs at a time to stay within free rate limits. This is the
+  first part that would slow down with many users.

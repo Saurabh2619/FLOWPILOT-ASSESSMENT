@@ -5,7 +5,8 @@ update.
 
 **Status:** in development. Authentication, roles, mock billing, website
 management, audits and scheduled background runs work in the API.
-AI suggestions and the dashboard are not built yet.
+AI suggestions work in the API when `AI_API_KEY` (a free Gemini key) is set.
+The dashboard is not built yet.
 
 ## Requirements
 
@@ -43,6 +44,9 @@ Local MongoDB (start this first):
 ```bash
 docker run -d --name flowpilot-mongo -p 127.0.0.1:27017:27017 -v flowpilot-mongo-data:/data/db mongo:8
 ```
+
+AI suggestions need `AI_API_KEY` in `server/.env`, from Google AI Studio. Without
+it audits still work and suggestions are reported as not configured.
 
 ## Checks
 

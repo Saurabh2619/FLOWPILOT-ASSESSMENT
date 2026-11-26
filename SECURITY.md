@@ -39,3 +39,14 @@
   after decompression.
 - Another user's website returns 404.
 - Text taken from audited sites is untrusted and length limited before storage.
+
+## AI
+
+- Website text is untrusted. It is sent as data, separate from the instructions,
+  which tell the model to ignore any instructions inside it.
+- The model has no tools and cannot take actions. Its answer is schema validated,
+  length limited and shown as plain text.
+- The API key is read from the environment and sent in a request header.
+- Gap: prompt injection can still skew the wording of advice for that site.
+- Gap: on the free tier Google may use submitted data to improve its products.
+  Only reports about public pages are sent, with no account details.

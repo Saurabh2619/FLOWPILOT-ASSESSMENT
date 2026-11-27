@@ -10,7 +10,7 @@
 | Jobs | Schedules, run keys, locks, backoff, history, priority | Separate worker service: free hosting |
 | AI | Gemini with model fallback, schema check, separate retries | Regenerating a finished suggestion |
 | Web app | All listed screens, mobile layout, optimistic updates | Automated browser tests: time |
-| Delivery | Vercel, Render, Atlas, CI for lint and tests | Automatic API deploys and uptime pings |
+| Delivery | Vercel, Render, Atlas, CI for lint and tests | Uptime pings |
 
 ## Mocked and changed
 
@@ -241,4 +241,5 @@ upgrade does not resume paused sites automatically; the owner chooses which.
   proxy addresses. With 3, a direct request is keyed on the caller's address and a
   forged `X-Forwarded-For` header is ignored. This was checked on the live API.
 - The free API instance sleeps when idle. Scheduled audits wait until it wakes.
-- The API service was connected by public repository URL, so it is deployed by hand.
+- Both hosts deploy automatically when `main` is pushed. The deploy does not wait
+  for CI.

@@ -3,6 +3,13 @@ import { randomBytes } from 'node:crypto';
 const DEFAULT_PORT = 4000;
 const MIN_SECRET_LENGTH = 32;
 const DEFAULT_AI_MODELS = 'gemini-3.5-flash,gemini-flash-lite-latest,gemini-3.1-flash-lite';
+const RAZORPAY_VARIABLES = [
+  'RAZORPAY_KEY_ID',
+  'RAZORPAY_KEY_SECRET',
+  'RAZORPAY_WEBHOOK_SECRET',
+  'RAZORPAY_PLAN_PRO',
+  'RAZORPAY_PLAN_BUSINESS',
+];
 
 function readInteger(source, name, fallback, { min, max }) {
   const value = Number(source[name] ?? fallback);
@@ -18,6 +25,23 @@ function readSecret(source, name) {
     throw new Error(`${name} must be set to at least ${MIN_SECRET_LENGTH} characters`);
   }
   return value;
+}
+
+function readRazorpay(source) {
+  const values = Object.fromEntries(
+    RAZORPAY_VARIABLES.map((name) => [name, source[name]?.trim() || null]),
+  );
+  const missing = RAZORPAY_VARIABLES.filter((name) => !values[name]);
+  if (missing.length === RAZORPAY_VARIABLES.length) return null;
+  if (missing.length > 0) {
+    throw new Error(`Razorpay needs all its settings. Missing: ${missing.join(', ')}`);
+  }
+  return {
+    keyId: values.RAZORPAY_KEY_ID,
+    keySecret: values.RAZORPAY_KEY_SECRET,
+    webhookSecret: values.RAZORPAY_WEBHOOK_SECRET,
+    planIds: { pro: values.RAZORPAY_PLAN_PRO, business: values.RAZORPAY_PLAN_BUSINESS },
+  };
 }
 
 export function loadConfig(source = process.env) {
@@ -44,6 +68,7 @@ export function loadConfig(source = process.env) {
     },
     billing: {
       webhookSecret: source.BILLING_WEBHOOK_SECRET || randomBytes(32).toString('hex'),
+      razorpay: readRazorpay(source),
     },
     auth: {
       accessSecret: readSecret(source, 'JWT_ACCESS_SECRET'),

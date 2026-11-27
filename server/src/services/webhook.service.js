@@ -71,7 +71,9 @@ async function applyEvent(subscription, event) {
 }
 
 export async function handleWebhook({ rawBody, headers }, billingProvider) {
-  const parsed = eventSchema.safeParse(billingProvider.parseWebhook(rawBody, headers));
+  const received = billingProvider.parseWebhook(rawBody, headers);
+  if (received === null) return { ignored: true };
+  const parsed = eventSchema.safeParse(received);
   if (!parsed.success) throw new HttpError(400, 'Unsupported webhook payload');
   const event = parsed.data;
   const provider = billingProvider.name;

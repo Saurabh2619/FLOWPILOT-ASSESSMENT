@@ -5,7 +5,7 @@
 | Area | Built | Skipped or simplified, and why |
 | --- | --- | --- |
 | Accounts | Sign up, login, rotation, logout, reset, roles, admin disable | Email verification and MFA: outside the brief |
-| Billing | Provider interface, mock checkout, signed webhooks, limits, downgrade | Real gateway: see "Mocked and changed" |
+| Billing | Provider interface, mock checkout, signed webhooks, limits, downgrade, Razorpay provider (off, not run with real keys) | Live gateway connection: see "Mocked and changed" |
 | Audit | Home page and up to 5 pages, all listed checks, scoring | PageSpeed and Core Web Vitals: optional. No JavaScript rendering: too heavy for a free host |
 | Jobs | Schedules, run keys, locks, backoff, history, priority | Separate worker service: free hosting |
 | AI | Gemini with model fallback, schema check, separate retries | Regenerating a finished suggestion |
@@ -101,10 +101,9 @@ the client is built.
 
 ## Billing and webhook sync
 
-- Billing sits behind a provider interface. The current provider is a mock that
+- Billing sits behind a provider interface. The provider in use is a mock that
   signs webhooks with HMAC-SHA256. Razorpay test mode was not connected, because
-  opening the merchant account required a PAN. A Razorpay provider can implement the
-  same interface.
+  opening the merchant account required a PAN. See "Razorpay provider" below.
 - Starting checkout grants nothing. Only a verified webhook changes a plan.
 - Signatures are checked on the raw request body, before JSON parsing.
 - Each event ID is stored under a unique index and marked processed only after it
@@ -116,6 +115,34 @@ the client is built.
 - A newly activated subscription cancels older ones.
 - A failed renewal keeps access (`past_due`) until the provider cancels. A failed
   first payment grants nothing.
+
+## Razorpay provider
+
+`server/src/providers/billing/razorpay.js` creates and cancels subscriptions,
+verifies webhook signatures and maps Razorpay events to the four internal ones. It
+was written from Razorpay's documentation and is tested against simulated
+responses only. It has never called Razorpay.
+
+It is off by default. To try it:
+
+1. In Razorpay test mode, create monthly plans matching the prices on the billing
+   screen.
+2. Set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`,
+   `RAZORPAY_PLAN_PRO` and `RAZORPAY_PLAN_BUSINESS`. With all five the app uses
+   Razorpay, with none the mock, and with only some it refuses to start.
+3. Add a webhook for `<API address>/api/webhooks/billing` with the same secret and
+   the subscription events.
+4. Make a test payment and check the plan changes.
+
+Expected follow-up work:
+
+- Checkout opens Razorpay's hosted page, which does not send the user back to the
+  app.
+- After cancelling, the plan changes when the webhook arrives, so the billing screen
+  needs to refresh or poll.
+- `subscription.halted` is treated like a failed renewal, so access continues until
+  a cancellation.
+- Subscriptions are created for 120 monthly cycles.
 
 ## Plan limits and downgrade
 

@@ -24,6 +24,8 @@
 - Webhooks are authenticated with a constant-time HMAC comparison on the raw body
   and the payload is schema-validated.
 - Checkout can only be completed by the account that started it.
+- With Razorpay settings present, the mock payment route is not registered. That
+  provider has not been run against Razorpay.
 - Gap: while the mock provider is active, any signed-in user can upgrade without
   paying. This is intended for testing only.
 - Gap: a `past_due` subscription keeps access until a cancellation event arrives.

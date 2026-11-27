@@ -120,6 +120,7 @@ $env:ADMIN_EMAIL="admin@example.com"; $env:ADMIN_PASSWORD="choose-a-password"; n
 | `CORS_ORIGINS` | Allowed browser origins | `http://localhost:3000` |
 | `AI_API_KEY`, `AI_MODELS` | Gemini key and models, tried in order | no key |
 | `BILLING_WEBHOOK_SECRET` | Signs mock webhooks | random at start |
+| `RAZORPAY_*` | Five settings that switch billing to Razorpay, see DECISIONS.md | unset (mock) |
 | `TRUST_PROXY` | Number of proxies in front of the API | `0` |
 | `RUN_WORKER` | Set `false` to run without background jobs | `true` |
 
